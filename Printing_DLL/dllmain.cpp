@@ -7,16 +7,21 @@
 #include "pch.h"
 #include "MinHook.h"
 #include <iostream>
+#include <windows.h>
+#include <winspool.h>
 
 #pragma comment(lib, "libMinHook.x64.lib")
+#pragma comment(lib, "winspool.lib")
 
 using namespace std;
 
 
 FILE* log_file;
 
-
-
+HDC memDC = NULL;
+HBITMAP memBM = NULL;
+int CaptureAnImagePrinter(HDC hdcMemDC, HBITMAP hbmScreen, HDC hdcWindow);
+int CaptureAnImageDc(HDC hdcWindow);
 
 typedef int (WINAPI* MESSAGEBOXW)(HWND, LPCWSTR, LPCWSTR, UINT);
 /* 01 */
@@ -54,9 +59,139 @@ BOOL WINAPI DetourExtTextOutW(HDC hdc, int x, int y, UINT options, const RECT* l
 	    fprintf(log_file, "lprect->top: %d\n", lprect->top);
 	    fprintf(log_file, "lprect->bottom: %d\n", lprect->bottom);
 	}
-
+	
+	
 	
 	fputs("\n", log_file);
+
+	/*
+	BOOL resultA = 0;
+	if (memDC == NULL)
+	{
+		memDC = CreateCompatibleDC(NULL);
+	}
+	*/
+
+	//HDC hdcScreen = GetDC(NULL);
+	//fpExtTextOutW(hdcScreen, x, y, options, lprect, lpString, c, lpDx);
+	memDC = CreateCompatibleDC(NULL);
+
+
+
+	BITMAP structBitmapHeader;
+	memset(&structBitmapHeader, 0, sizeof(BITMAP));
+	HGDIOBJ hBitmap = GetCurrentObject(hdc, OBJ_BITMAP);
+	GetObject(hBitmap, sizeof(BITMAP), &structBitmapHeader);
+	int bmWidth = structBitmapHeader.bmWidth;
+	int bmHeight = structBitmapHeader.bmHeight;
+
+	fprintf(log_file, "bmWidth: %d\n", bmWidth);
+	fprintf(log_file, "bmHeight: %d\n", bmHeight);
+
+
+	if ((bmWidth < 2) && (bmHeight < 2) && (x<1000) && (y<1000) )
+	{
+
+		fwprintf(log_file, L"***lpString***: %s\n", lpString);
+		HBITMAP hbmp = CreateCompatibleBitmap(memDC,
+			3000, 3000);
+		SelectObject(memDC, hbmp);
+		
+		// Paints most of the rectangle white
+		// https://learn.microsoft.com/en-us/answers/questions/530936/createcompatabilebitmap-background-is-always-black
+		PatBlt(memDC, 0, 0, 2500, 2500, WHITENESS);
+		fpExtTextOutW(memDC, x, y, options, lprect, lpString, c, lpDx);
+		CaptureAnImageDc(memDC);
+		// TODO: Delete device context `memDC` and bitmap `hbmp`.
+
+
+
+		/* Write to printer*/
+		// Works with wchar_t pDeviceName[MAX_PATH] = L"Bullzip PDF Printer";
+		// For L"hp LaserJet 1320 PCL 6", a job is submitted but does not leave the spooler.
+		/*
+		fwprintf(log_file, L"AAAAAAAAAA*: %s\n", lpString);
+		fflush(log_file);
+		HANDLE phPrinter;
+		fwprintf(log_file, L"BBBBBBBBB*: %s\n", lpString);
+		fflush(log_file);
+		HDC printerDC;
+		fwprintf(log_file, L"CCCCCCCCCCC*: %s\n", lpString);
+		fflush(log_file);
+		// A pointer to a DEVMODE structure that receives the printer configuration data specified by the user.
+		DEVMODE* pDevModeOutput;
+
+		// A pointer to a null-terminated string that specifies the name of the device for which the 
+		// printer-configuration property sheet is displayed.
+		wchar_t pDeviceName[MAX_PATH] = L"Bullzip PDF Printer";
+
+		OpenPrinter(pDeviceName, &phPrinter, NULL);
+
+		int size = DocumentProperties(NULL, phPrinter, pDeviceName, NULL, NULL, 0);
+		pDevModeOutput = (DEVMODE*)malloc(size);
+		DocumentProperties(NULL, phPrinter, pDeviceName, pDevModeOutput, NULL, DM_OUT_BUFFER);
+		printerDC = CreateDC(L"WINSPOOL", pDeviceName, NULL, pDevModeOutput);
+
+		fprintf(log_file, "printerDC: %p\n", printerDC);
+		fflush(log_file);
+
+		int result = -999;
+
+		DOCINFO info;
+		memset(&info, 0, sizeof(info));
+		info.cbSize = sizeof(info);
+		int jobId = StartDoc(printerDC, &info);
+		fprintf(log_file, "job: %d\n", jobId);
+		fflush(log_file);
+		result = StartPage(printerDC);
+		fprintf(log_file, "StartPage: %d\n", result);
+		fflush(log_file);
+		result = fpExtTextOutW(printerDC, x, y, options, lprect, L"AAAAAAA", c, lpDx);
+		
+		fprintf(log_file, "fpExtTextOutW: %d\n", result);
+		fflush(log_file);
+		Sleep(3000);
+		result = EndPage(printerDC);
+		fprintf(log_file, "EndPage: %d\n", result);
+		fflush(log_file);
+		result = EndDoc(printerDC);
+		fprintf(log_file, "EndDoc: %d\n", result);
+		fflush(log_file);
+		
+		result = ClosePrinter(phPrinter);
+		fprintf(log_file, "ClosePrinter: %d\n", result);
+		fflush(log_file);
+		*/
+
+	}
+	
+	/*
+	HDC hdc = CreateCompatibleDC(hdcScreen);
+	HBITMAP hbmp = CreateCompatibleBitmap(hdcScreen,
+		400, 400);
+	SelectObject(hdc, hbmp);
+	
+	//resultA = fpExtTextOutW(memDC, x, y, options, lprect, lpString, c, lpDx);
+	resultA = fpExtTextOutW(hdc, x, y, options, lprect, lpString, c, lpDx);
+
+	
+	if (memBM == NULL)
+	{
+		memBM = CreateCompatibleBitmap(hdc, 400, 400);
+	}
+
+	
+	SelectObject(memDC, memBM);
+
+	
+	if (y>0 && x>0)
+	{
+		CaptureAnImagePrinter(memDC, memBM, hdc);
+	}
+	*/
+
+	//CaptureAnImagePrinter(memDC, memBM, hdc);
+
 	
 	//fclose(log2);
 	
@@ -147,6 +282,236 @@ int test_hook_win_api()
 	return 0;
 
 }
+
+
+int CaptureAnImagePrinter(HDC hdcMemDC, HBITMAP hbmScreen, HDC hdcWindow)
+{
+	//HDC hdcScreen;
+	//HDC hdcWindow;
+	//HDC hdcMemDC = NULL;
+	//HBITMAP hbmScreen = NULL;
+	BITMAP bmpScreen;
+	DWORD dwBytesWritten = 0;
+	DWORD dwSizeofDIB = 0;
+	HANDLE hFile = NULL;
+	char* lpbitmap = NULL;
+	HANDLE hDIB = NULL;
+	DWORD dwBmpSize = 0;
+
+	int result = -999;
+
+	// Bit block transfer into our compatible memory DC.
+	BitBlt(hdcMemDC,
+		0, 0,
+		400, 400,
+		hdcWindow,
+		0, 0,
+		SRCCOPY);
+
+	// Get the BITMAP from the HBITMAP.
+	GetObject(hbmScreen, sizeof(BITMAP), &bmpScreen);
+
+	BITMAPFILEHEADER   bmfHeader;
+	BITMAPINFOHEADER   bi;
+
+	bi.biSize = sizeof(BITMAPINFOHEADER);
+	bi.biWidth = bmpScreen.bmWidth;
+	bi.biHeight = bmpScreen.bmHeight;
+	bi.biPlanes = 1;
+	bi.biBitCount = 32;
+	bi.biCompression = BI_RGB;
+	bi.biSizeImage = 0;
+	bi.biXPelsPerMeter = 0;
+	bi.biYPelsPerMeter = 0;
+	bi.biClrUsed = 0;
+	bi.biClrImportant = 0;
+
+	dwBmpSize = ((bmpScreen.bmWidth * bi.biBitCount + 31) / 32) * 4 * bmpScreen.bmHeight;
+
+	// Starting with 32-bit Windows, GlobalAlloc and LocalAlloc are implemented as wrapper functions that 
+	// call HeapAlloc using a handle to the process's default heap. Therefore, GlobalAlloc and LocalAlloc 
+	// have greater overhead than HeapAlloc.
+	hDIB = GlobalAlloc(GHND, dwBmpSize);
+	lpbitmap = (char*)GlobalLock(hDIB);
+
+	// Gets the "bits" from the bitmap, and copies them into a buffer 
+	// that's pointed to by lpbitmap.
+	GetDIBits(hdcWindow, hbmScreen, 0,
+		(UINT)bmpScreen.bmHeight,
+		lpbitmap,
+		(BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+	// A file is created, this is where we will save the screen capture.
+	hFile = CreateFile(L"d:\\projects\\captureqwsxA.bmp",
+		GENERIC_WRITE,
+		0,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+
+	// Add the size of the headers to the size of the bitmap to get the total file size.
+	dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+	// Offset to where the actual bitmap bits start.
+	bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
+
+	// Size of the file.
+	bmfHeader.bfSize = dwSizeofDIB;
+
+	// bfType must always be BM for Bitmaps.
+	bmfHeader.bfType = 0x4D42; // BM.
+
+	WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+	WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+	WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
+
+	// Unlock and Free the DIB from the heap.
+	GlobalUnlock(hDIB);
+	GlobalFree(hDIB);
+
+	// Close the handle for the file that was created.
+	CloseHandle(hFile);
+
+	// Clean up.
+done:
+	DeleteObject(hbmScreen);
+	DeleteObject(hdcMemDC);
+
+
+	return 0;
+}
+
+
+int CaptureAnImageDc(HDC hdcWindow)
+{
+	HDC hdcMemDC = NULL;
+	HBITMAP hbmScreen = NULL;
+	BITMAP bmpScreen;
+	DWORD dwBytesWritten = 0;
+	DWORD dwSizeofDIB = 0;
+	HANDLE hFile = NULL;
+	char* lpbitmap = NULL;
+	HANDLE hDIB = NULL;
+	DWORD dwBmpSize = 0;
+
+	int result = -999;
+
+
+	BITMAP structBitmapHeader;
+	memset(&structBitmapHeader, 0, sizeof(BITMAP));
+	HGDIOBJ hBitmap = GetCurrentObject(hdcWindow, OBJ_BITMAP);
+	GetObject(hBitmap, sizeof(BITMAP), &structBitmapHeader);
+	int bmWidth = structBitmapHeader.bmWidth;
+	int bmHeight = structBitmapHeader.bmHeight;
+
+	// Create a compatible DC, which is used in a BitBlt from the window DC.
+	hdcMemDC = CreateCompatibleDC(hdcWindow);
+
+	BITMAP structBitmapHeader2;
+	memset(&structBitmapHeader2, 0, sizeof(BITMAP));
+	HGDIOBJ hBitmap2 = GetCurrentObject(hdcMemDC, OBJ_BITMAP);
+	GetObject(hBitmap2, sizeof(BITMAP), &structBitmapHeader2);
+	int bmWidth2 = structBitmapHeader2.bmWidth;
+	int bmHeight2 = structBitmapHeader2.bmHeight;
+
+
+
+	// Bit block transfer into our compatible memory DC.
+	BitBlt(hdcMemDC,
+		0, 0,
+		bmWidth, bmHeight,
+		hdcWindow,
+		0, 0,
+		SRCCOPY);
+
+	// Create a compatible bitmap from the Window DC.
+	hbmScreen = CreateCompatibleBitmap(hdcWindow, bmWidth, bmHeight);
+
+	// Select the compatible bitmap into the compatible memory DC.
+	SelectObject(hdcMemDC, hbmScreen);
+
+	// Bit block transfer into our compatible memory DC.
+	BitBlt(hdcMemDC,
+		0, 0,
+		bmWidth, bmHeight,
+		hdcWindow,
+		0, 0,
+		SRCCOPY);
+
+	// Get the BITMAP from the HBITMAP.
+	GetObject(hbmScreen, sizeof(BITMAP), &bmpScreen);
+
+	BITMAPFILEHEADER   bmfHeader;
+	BITMAPINFOHEADER   bi;
+
+	bi.biSize = sizeof(BITMAPINFOHEADER);
+	bi.biWidth = bmpScreen.bmWidth;
+	bi.biHeight = bmpScreen.bmHeight;
+	bi.biPlanes = 1;
+	bi.biBitCount = 32;
+	bi.biCompression = BI_RGB;
+	bi.biSizeImage = 0;
+	bi.biXPelsPerMeter = 0;
+	bi.biYPelsPerMeter = 0;
+	bi.biClrUsed = 0;
+	bi.biClrImportant = 0;
+
+	dwBmpSize = ((bmpScreen.bmWidth * bi.biBitCount + 31) / 32) * 4 * bmpScreen.bmHeight;
+
+	// Starting with 32-bit Windows, GlobalAlloc and LocalAlloc are implemented as wrapper functions that 
+	// call HeapAlloc using a handle to the process's default heap. Therefore, GlobalAlloc and LocalAlloc 
+	// have greater overhead than HeapAlloc.
+	hDIB = GlobalAlloc(GHND, dwBmpSize);
+	lpbitmap = (char*)GlobalLock(hDIB);
+
+	// Gets the "bits" from the bitmap, and copies them into a buffer 
+	// that's pointed to by lpbitmap.
+	GetDIBits(hdcWindow, hbmScreen, 0,
+		(UINT)bmpScreen.bmHeight,
+		lpbitmap,
+		(BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+	// A file is created, this is where we will save the screen capture.
+	hFile = CreateFile(L"d:\\projects\\captureqwsxB.bmp",
+		GENERIC_WRITE,
+		0,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+
+	// Add the size of the headers to the size of the bitmap to get the total file size.
+	dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+	// Offset to where the actual bitmap bits start.
+	bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
+
+	// Size of the file.
+	bmfHeader.bfSize = dwSizeofDIB;
+
+	// bfType must always be BM for Bitmaps.
+	bmfHeader.bfType = 0x4D42; // BM.
+
+	WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+	WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+	WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
+
+	// Unlock and Free the DIB from the heap.
+	GlobalUnlock(hDIB);
+	GlobalFree(hDIB);
+
+	// Close the handle for the file that was created.
+	CloseHandle(hFile);
+
+	// Clean up.
+done:
+	DeleteObject(hbmScreen);
+	DeleteObject(hdcMemDC);
+
+
+	return 0;
+}
+
+
 
 
 

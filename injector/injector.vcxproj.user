@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>"C:\Program Files\Windows NT\Accessories\wordpad.exe" D:\Development\git\Win32_API_Hooking\x64\Debug\Monitor.dll </LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"C:\Program Files\Windows NT\Accessories\wordpad.exe" D:\Development\git\Win32_API_Hooking\x64\Debug\Printing_DLL.dll</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
