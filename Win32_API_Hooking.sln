@@ -5,9 +5,9 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "injector", "injector\injector.vcxproj", "{09D76F63-4975-4F79-AA68-2784E0AE1CFB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Monitor", "Monitor\Monitor.vcxproj", "{92AE997A-3126-4CD5-9F06-1FFE2CECA449}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Monitor_DLL", "Monitor_DLL\Monitor.vcxproj", "{92AE997A-3126-4CD5-9F06-1FFE2CECA449}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dll1", "Dll1\Dll1.vcxproj", "{E0AD5837-D58C-4F7F-A2F3-A0FDD77A5AD1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Printing_DLL", "Printing_DLL\Dll1.vcxproj", "{E0AD5837-D58C-4F7F-A2F3-A0FDD77A5AD1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

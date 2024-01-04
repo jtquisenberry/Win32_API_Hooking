@@ -10,6 +10,7 @@
 // Hooks that will be installed (see monitor.h)
 //============================================
 
+
 HOOK_INFO hooks[]= {
     {
         L"ws2_32",
@@ -40,14 +41,19 @@ HOOK_INFO hooks[]= {
         "LoadLibraryA",
         &ProxyLoadLibraryA,
         &fpLoadLibraryA
-    },
+    }
+    
+    ,
     {
         L"kernel32", 
         "GetProcAddress",
         &ProxyGetProcAddress,
         &fpGetProcAddress
     }
+    
 };
+
+
 
 
 // Hook installation functions

@@ -59,7 +59,7 @@ void open_log(TCHAR *exePath)
 // Entry: Createprocess (suspended) > inject > resume
 //====================================================
 
-int main(int argc, TCHAR *argv[])
+int wmain(int argc, TCHAR *argv[])
 {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
