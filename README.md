@@ -1,6 +1,8 @@
-# Windows API Hooking and DLL Injection
+# Basic Windows API Hooking and DLL Injection
 
-This solution demonstrates Windows API hooking and DLL injection. The solution consists of these projects:
+This solution provides a basic example of Windows API hooking and DLL injection without a complex framework, such as Microsoft Detours.
+
+The solution consists of these projects:
 
 * injector
 * Monitor_DLL
@@ -21,7 +23,22 @@ This solution demonstrates Windows API hooking and DLL injection. The solution c
 > injector.exe "C:\Program Files\Windows NT\Accessories\wordpad.exe" D:\Development\git\Win32_API_Hooking\x64\Debug\Printing_DLL.dll
 ```
 
-# Monitor_DLL.dll
+# Injector
+
+The injector performs these operations:
+1. Start an executable in `CREATE_SUSPENDED` mode using `CreateProcess`.
+1. Injects a DLL into the executable using `VirtualAllocEx`, and `WriteProcessMemory`.
+1. Creates a new thread in the executable using `CreateRemoteThread`.
+1. Resumes the executable using `ResumeThread`.
+
+
+
+# DLLs
+
+The DLL projects provide minimally functional implementations of hooking use cases. 
+
+
+## Monitor_DLL.dll
 
 This DLL demonstrates hooking APIs related to starting a program and loading a DLL. 
 * `CreateProcessInternalW`
@@ -33,7 +50,7 @@ This DLL demonstrates hooking APIs related to starting a program and loading a D
 Information about the DLL calls is loged to the path hard-coded in the `logger.h` header file. The path should be updated before compiling the DLL. 
 
 
-# Printing_DLL.dll
+## Printing_DLL.dll
 
 This DLL demonstrates hooking the Windows printing subsystem. It hooks `ExtTextOutW` and logs information about the text content and position printed. The log file path is currently hard-coded and should be updated before compiling the DLL.
 
