@@ -100,9 +100,23 @@ int WINAPI ProxyLoadLibraryA(LPCSTR lpLibFileName)
 FARPROC WINAPI ProxyGetProcAddress(HMODULE hModule, LPCSTR lpProcName)
 {
     wchar_t wProcName[128];
-    MultiByteToWideChar(CP_THREAD_ACP, (DWORD)0, lpProcName, -1, wProcName, 128);
-    logger << L"[HOOK] Intercepted call to GetProcAddress:\n" << L"- Function Name: " << wProcName << std::endl;
-    return fpGetProcAddress(hModule, lpProcName);
+    
+    // [in] lpProcName: The function or variable name, or the function's ordinal value. If this parameter is an ordinal value, 
+    // it must be in the low-order word; the high-order word must be zero.
+    // https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress
+    WORD high_word = HIWORD(lpProcName);
+    if (high_word != 0)
+    {
+        MultiByteToWideChar(CP_THREAD_ACP, (DWORD)0, lpProcName, -1, wProcName, 128);
+        logger << L"[HOOK] Intercepted call to GetProcAddress:\n" << L"- Function Name: " << wProcName << std::endl;
+    }
+    else
+    {
+        logger << L"[HOOK] Intercepted call to GetProcAddress:\n" << L"- Function Name: " << (DWORD)wProcName << std::endl;
+    }
+        
+    FARPROC result = fpGetProcAddress(hModule, lpProcName);
+    return result;
 }
 
 
